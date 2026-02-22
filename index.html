@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Benim Dünyalar Güzelime</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { --p: #ff4d6d; --bg: #0d0d0d; --card: #16161a; }
+        * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        .hidden { display: none !important; }
+
+        /* 1. BÖLÜM: BİOMETRİK GİRİŞ */
+        #entry-page { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e, #000); }
+        .biometric-box { width: 140px; height: 180px; border: 3px solid var(--p); border-radius: 30px; position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; }
+        .scan-bar { position: absolute; width: 100%; height: 4px; background: var(--p); box-shadow: 0 0 15px var(--p); top: 0; display: none; }
+        @keyframes scanAnim { 0% { top: 0%; } 100% { top: 100%; } }
+        #status-text { margin-top: 20px; font-weight: bold; color: var(--p); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ANA APP */
+        .card { background: var(--card); border-radius: 20px; padding: 25px; margin: 15px; border: 1px solid #333; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        /* DASHBOARD */
+        #timer { font-size: 28px; color: var(--p); font-weight: bold; margin: 10px 0; }
+        .weather-panel { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 10px; border-top: 1px solid #222; padding-top: 15px; }
+        .heart-beat { font-size: 30px; animation: beat 0.8s infinite alternate; }
+        @keyframes beat { to { transform: scale(1.2); } }
+
+        /* LALE BAHÇESİ */
+        .garden-area { height: 200px; border-bottom: 4px solid #3d2b1f; display: flex; align-items: flex-end; justify-content: center; position: relative; margin-top: 30px; overflow: hidden; }
+        #can-icon { position: absolute; font-size: 45px; pointer-events: none; opacity: 0; z-index: 100; transform: translate(-50%, -50%); }
+        .lale { font-size: 0px; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); margin: 0 10px; }
+
+        /* AŞK TESTİ (5 SORU) */
+        #q-text { font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+        .btn-row { display: flex; justify-content: center; gap: 15px; }
+        .btn { padding: 12px 25px; background: #222; border: 2px solid var(--p); color: white; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn:active { background: var(--p); transform: translateY(3px); }
+        #test-feedback { height: 20px; margin-top: 15px; color: gold; font-weight: bold; }
+
+        /* FİNAL */
+        #final-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; text-align: center; }
+        #final-text { font-size: 3rem; color: var(--p); font-weight: 900; text-shadow: 0 0 20px var(--p); }
+    </style>
+</head>
+<body>
+
+    <div id="entry-page">
+        <div class="biometric-box" id="fp-trigger">
+            <div class="scan-bar" id="scanner"></div>
+            <span style="font-size: 60px;">🧬</span>
+        </div>
+        <div id="status-text">KİMLİK BEKLENİYOR...</div>
+    </div>
+
+    <div id="main-app" class="hidden">
+        
+        <div class="card">
+            <h3>Seni Tanıdığımdan Beri...</h3>
+            <div id="timer">00g 00s 00d 00s</div>
+            <div class="weather-panel">
+                <div class="heart-beat">❤️</div>
+                <div style="text-align: left;">
+                    <div style="font-size: 12px; opacity: 0.6;">Konum: Onun Kalbi</div>
+                    <div style="font-size: 18px; font-weight: bold; color: gold;">1.000.000°C</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="garden-container" style="touch-action: none;">
+            <h3>Lale Bahçemiz</h3>
+            <div class="garden-area" id="garden-floor">
+                <div id="can-icon">🚿</div>
+                <div class="lale">🌷</div>
+                <div class="lale">🌷</div>
+                <div class="lale">🌷</div>
+            </div>
+            <button class="btn" id="water-btn" style="width: 100%; margin-top: 20px; background: #0077b6; border-color: #00b4d8;">BAHÇEYİ SULA 💧</button>
+            <p style="font-size: 11px; opacity: 0.5; margin-top: 10px;">Basılı tut ve çiçeklerin üzerinde gezdir</p>
+        </div>
+
+        <div class="card">
+            <h3>Doğruluk Testi</h3>
+            <div id="test-content">
+                <p id="q-text">Dünyanın en şanslı ama bir o kadar da baş belası insanı kim?</p>
+                <div class="btn-row">
+                    <button class="btn" onclick="checkAns(true)">BEN</button>
+                    <button class="btn" onclick="checkAns(true)">SEN</button>
+                </div>
+            </div>
+            <div id="test-feedback"></div>
+        </div>
+
+    </div>
+
+    <div id="final-screen" class="hidden">
+        <div id="final-text">SENİ ÇOK SEVİYORUM ❤️</div>
+    </div>
+
+    <script>
+        // 1. GİRİŞ MEKANİĞİ
+        const fpTrigger = document.getElementById('fp-trigger');
+        const scanner = document.getElementById('scanner');
+        const statusText = document.getElementById('status-text');
+        let scanTimer;
+
+        fpTrigger.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            scanner.style.display = 'block';
+            scanner.style.animation = 'scanAnim 2s infinite linear';
+            statusText.innerText = 'TARANIYOR...';
+            if(navigator.vibrate) navigator.vibrate([50, 50, 50]);
+
+            scanTimer = setTimeout(() => {
+                statusText.innerText = 'DOĞRULANDI: DÜNYALAR GÜZELİ';
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                setTimeout(() => {
+                    document.getElementById('entry-page').classList.add('hidden');
+                    document.getElementById('main-app').classList.remove('hidden');
+                }, 1000);
+            }, 2000);
+        });
+
+        fpTrigger.addEventListener('touchend', () => {
+            clearTimeout(scanTimer);
+            scanner.style.display = 'none';
+            statusText.innerText = 'KİMLİK BEKLENİYOR...';
+        });
+
+        // 2. CANLI SAYAÇ
+        function updateTimer() {
+            const startDate = new Date('2024-09-16T00:00:00');
+            const now = new Date();
+            const diff = now - startDate;
+
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / (1000 * 60)) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+
+            document.getElementById('timer').innerText = 
+                `${d}g ${h.toString().padStart(2,'0')}s ${m.toString().padStart(2,'0')}d ${s.toString().padStart(2,'0')}s`;
+        }
+        setInterval(updateTimer, 1000);
+
+        // 3. LALE BAHÇESİ SULAMA
+        const waterBtn = document.getElementById('water-btn');
+        const can = document.getElementById('can-icon');
+        const gardenContainer = document.getElementById('garden-container');
+        let growth = 0;
+        let isWatering = false;
+
+        gardenContainer.addEventListener('touchmove', (e) => {
+            if(!isWatering) return;
+            const touch = e.touches[0];
+            const rect = document.getElementById('garden-floor').getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            can.style.left = x + 'px';
+            can.style.top = y + 'px';
+            can.style.opacity = '1';
+
+            growth += 0.3;
+            if(growth > 70) growth = 70;
+            document.querySelectorAll('.lale').forEach(l => l.style.fontSize = growth + 'px');
+            if(navigator.vibrate) navigator.vibrate(10);
+        });
+
+        waterBtn.addEventListener('touchstart', () => { isWatering = true; });
+        waterBtn.addEventListener('touchend', () => { 
+            isWatering = false; 
+            can.style.opacity = '0';
+        });
+
+        // 4. 5 SORULUK TEST MEKANİĞİ
+        let currentQ = 0;
+        const questions = [
+            { q: "Dünyanın en şanslı ama bir o kadar da baş belası insanı kim?", a1: "BEN", a2: "SEN" },
+            { q: "Seni kim dünyalar kadar seviyor?", a1: "BEN", a2: "TABİ Kİ BEN" },
+            { q: "En güzel manzara nedir?", a1: "SENİN YÜZÜN", a2: "BİZİM MANZARAMIZ" },
+            { q: "Huzur nerededir?", a1: "SENİN YANINDA", a2: "DİZİNDE" },
+            { q: "Seni kim her gün biraz daha fazla seviyor?", a1: "SEN", a2: "O (YANİ BEN)" }
+        ];
+
+        function checkAns(isRight) {
+            if(isRight) {
+                currentQ++;
+                if(currentQ < questions.length) {
+                    document.getElementById('q-text').innerText = questions[currentQ].q;
+                    const buttons = document.querySelectorAll('#test-content .btn');
+                    buttons[0].innerText = questions[currentQ].a1;
+                    buttons[1].innerText = questions[currentQ].a2;
+                    document.getElementById('test-feedback').innerText = "Doğru! Devam et...";
+                    setTimeout(() => { document.getElementById('test-feedback').innerText = ""; }, 1000);
+                } else {
+                    // FİNAL
+                    document.getElementById('final-screen').classList.remove('hidden');
+                    confetti({
+                        particleCount: 400,
+                        spread: 150,
+                        origin: { y: 0.5 }
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
