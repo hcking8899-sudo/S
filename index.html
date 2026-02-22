@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kusursuz Güzellik</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { --p: #ff4d6d; --dp: #c9184a; --bg: #0d0d0d; }
+        * { -webkit-tap-highlight-color: transparent; user-select: none; box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        .hidden { display: none !important; }
+
+        /* 1. PARMAK İZİ EKRANI */
+        #entry-page { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a2e, #000); }
+        .biometric-scanner { width: 150px; height: 150px; border: 3px solid var(--p); border-radius: 40px; position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .scan-bar { position: absolute; width: 80%; height: 2px; background: var(--p); box-shadow: 0 0 15px var(--p); top: 20%; animation: scanAnim 2s infinite ease-in-out; display: none; }
+        #entry-status { margin-top: 20px; font-weight: bold; color: var(--p); text-shadow: 0 0 10px var(--p); }
+
+        /* ANA KONTEYNER */
+        .card { background: #16161a; border-radius: 20px; padding: 25px; margin: 15px; border: 1px solid #333; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        /* GÜZELLİK ÖLÇER 1000 */
+        .gauge-wrap { position: relative; width: 260px; height: 130px; margin: 0 auto; overflow: hidden; }
+        .gauge-arc { width: 260px; height: 260px; border: 25px solid #222; border-radius: 50%; border-bottom-color: transparent; }
+        .needle { width: 5px; height: 110px; background: linear-gradient(to top, var(--p), #ffea00); position: absolute; bottom: 10px; left: 127.5px; transform-origin: bottom center; transform: rotate(-90deg); transition: 0.1s; border-radius: 5px; }
+        .pedal { width: 100px; height: 140px; background: #333; border-radius: 15px; margin: 20px auto; border: 2px solid #444; box-shadow: 0 10px 0 #000; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #777; transition: 0.1s; cursor: pointer; }
+        .pedal:active { transform: translateY(8px); box-shadow: 0 2px 0 #000; color: white; }
+
+        /* ÇARK SİSTEMİ */
+        .wheel-container { width: 280px; height: 280px; margin: 0 auto; position: relative; }
+        #wheel { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #333; transition: 4s cubic-bezier(0.1, 0, 0.1, 1); background: conic-gradient(
+            #ff4d6d 0 60deg, #c9184a 60deg 120deg, #ff758f 120deg 180deg, 
+            #800f2f 180deg 240deg, #a4133c 240deg 300deg, #590d22 300deg 360deg
+        ); }
+        .prize-info { margin-top: 15px; padding: 15px; border-radius: 15px; background: rgba(255,255,255,0.05); min-height: 80px; border: 1px dashed var(--p); }
+
+        /* LALE BAHÇESİ */
+        .garden { height: 180px; border-bottom: 5px solid #3d2b1f; display: flex; align-items: flex-end; justify-content: center; position: relative; margin-top: 40px; }
+        .watering-can { position: absolute; font-size: 50px; transform: translate(-50%, -100%); pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+        .lale { font-size: 0px; transition: 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        /* LABİRENT */
+        #maze-box { width: 100%; height: 400px; background: #000; position: relative; overflow: hidden; border-radius: 15px; border: 2px solid #333; }
+        .maze-wall { position: absolute; background: #222; border: 1px solid #333; }
+        .player { width: 22px; height: 22px; background: gold; border-radius: 50%; position: absolute; z-index: 50; box-shadow: 0 0 15px gold; transition: 0.05s linear; }
+        .maze-img { width: 60px; height: 60px; border: 2px solid white; border-radius: 10px; position: absolute; object-fit: cover; }
+
+        /* MESAJ ALANI */
+        .in-app-msg { color: gold; font-weight: bold; font-size: 1.1rem; margin-top: 10px; height: 25px; }
+
+        @keyframes scanAnim { 0%, 100% { top: 20%; } 50% { top: 80%; } }
+        @keyframes scanMove { from { top: 0; } to { top: 100%; } }
+    </style>
+</head>
+<body>
+
+    <div id="entry-page" class="screen">
+        <div class="biometric-scanner" id="fp-box">
+            <div class="scan-bar" id="fp-bar"></div>
+            <span style="font-size: 60px;">🧬</span>
+        </div>
+        <div id="entry-status">KİMLİK BEKLENİYOR...</div>
+    </div>
+
+    <div id="app" class="hidden">
+        
+        <div class="card">
+            <h3>Seni İlk Gördüğüm Günden Beri...</h3>
+            <div id="timer" style="font-size: 30px; color: var(--p); font-weight: bold;"></div>
+            <p style="font-size: 13px; opacity: 0.7; margin-top: 10px;">Dünyalar güzelim, iyi ki hayatımdasın...</p>
+        </div>
+
+        <div class="card">
+            <h3>Güzellik Göstergesi</h3>
+            <div class="gauge-wrap">
+                <div class="gauge-arc"></div>
+                <div id="needle" class="needle"></div>
+            </div>
+            <div id="speedo" style="font-size: 45px; font-weight: bold; color: var(--p);">0</div>
+            <div class="pedal" id="gas-pedal">GAZ</div>
+            <div id="gas-msg" class="in-app-msg"></div>
+        </div>
+
+        <div class="card">
+            <h3>Zarafet Çarkı</h3>
+            <div class="wheel-container">
+                <div id="wheel"></div>
+                <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 30px; z-index: 10;">▼</div>
+            </div>
+            <button class="pedal" style="width: 200px; height: 50px;" onclick="spin()">ÇEVİR ✨</button>
+            <div class="prize-info">
+                <div id="prize-name" style="color: gold; font-weight: bold; font-size: 1.2rem;">Ödülünü Seç</div>
+                <div id="prize-desc" style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">Kaderinde ne olduğunu görmek için çarkı çevir güzelliğim.</div>
+            </div>
+        </div>
+
+        <div class="card" id="garden-card">
+            <h3>Lale Bahçemiz</h3>
+            <div class="garden" id="garden-floor">
+                <div class="watering-can" id="can">🚿</div>
+                <div class="lale">🌷</div><div class="lale" style="margin: 0 20px;">🤍</div><div class="lale">🌷</div>
+            </div>
+            <button class="pedal" id="water-btn" style="width: 200px; height: 50px; background: #0077b6;">SULA 💧</button>
+            <div id="garden-msg" class="in-app-msg"></div>
+        </div>
+
+        <div class="card" style="padding: 0;">
+            <h3 style="margin: 15px 0;">Anı Labirenti</h3>
+            <div id="maze-box">
+                <div id="player" class="player" style="left: 170px; top: 350px;"></div>
+                <div class="maze-wall" style="top: 300px; left: 0; width: 140px; height: 15px;"></div>
+                <div class="maze-wall" style="top: 300px; right: 0; width: 140px; height: 15px;"></div>
+                <div class="maze-wall" style="top: 180px; left: 80px; width: 180px; height: 15px;"></div>
+                <div class="maze-wall" style="top: 80px; right: 80px; width: 180px; height: 15px;"></div>
+                
+                <img src="ben1.jpg" class="maze-img" style="top: 320px; left: 10px;">
+                <img src="o1.jpg" class="maze-img" style="top: 320px; right: 10px;">
+                <img src="ben2.jpg" class="maze-img" style="top: 200px; left: 10px;">
+                <img src="o2.jpg" class="maze-img" style="top: 200px; right: 10px;">
+                <img src="ben3.jpg" class="maze-img" style="top: 100px; left: 10px;">
+                <img src="o3.jpg" class="maze-img" style="top: 100px; right: 10px;">
+            </div>
+            <div id="maze-msg" class="in-app-msg" style="margin: 10px 0;">Çıkışa ulaşarak testi aç!</div>
+        </div>
+
+        <div id="test-section" class="card hidden">
+            <h3>Aşk Testi</h3>
+            <div id="test-content">
+                <p id="q-text" style="font-size: 1.1rem; font-weight: bold;">Dünyanın en şanslı insanı kimdir?</p>
+                <div style="display: flex; justify-content: center; gap: 15px; margin-top: 15px;">
+                    <button class="pedal" style="width: 100px; height: 45px;" onclick="nextQ('Bana göre ben')">Ben</button>
+                    <button class="pedal" style="width: 100px; height: 45px;" onclick="nextQ('Sana göre sen')">Sen</button>
+                </div>
+            </div>
+            <div id="test-msg" class="in-app-msg" style="color: #0f0;"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. GİRİŞ MANTIĞI
+        const fpBox = document.getElementById('fp-box');
+        const fpBar = document.getElementById('fp-bar');
+        let fpTimer;
+
+        fpBox.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            fpBar.style.display = 'block';
+            document.getElementById('entry-status').innerText = 'KİMLİK DOĞRULANIYOR...';
+            if(navigator.vibrate) navigator.vibrate(50);
+            fpTimer = setTimeout(() => {
+                document.getElementById('entry-status').innerText = 'DOĞRULANDI: DÜNYANIN EN GÜZEL KIZI.';
+                setTimeout(() => {
+                    document.getElementById('entry-page').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                    confetti();
+                }, 1000);
+            }, 2000);
+        });
+
+        fpBox.addEventListener('touchend', () => {
+            clearTimeout(fpTimer);
+            fpBar.style.display = 'none';
+            document.getElementById('entry-status').innerText = 'KİMLİK BEKLENİYOR...';
+        });
+
+        // 2. SAYAÇ
+        setInterval(() => {
+            const diff = new Date() - new Date('2024-09-16T00:00:00');
+            const d = Math.floor(diff/86400000);
+            const h = Math.floor((diff/3600000)%24);
+            const m = Math.floor((diff/60000)%60);
+            const s = Math.floor((diff/1000)%60);
+            document.getElementById('timer').innerText = `${d}g ${h}s ${m}d ${s}s`;
+        }, 1000);
+
+        // 3. GÜZELLİK ÖLÇER 1000
+        let deg = -90, gasInt;
+        const pedal = document.getElementById('gas-pedal');
+        pedal.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            gasInt = setInterval(() => {
+                deg += 3; if(deg > 90) deg = 90;
+                document.getElementById('needle').style.transform = `rotate(${deg}deg)`;
+                let val = Math.floor(((deg + 90) / 180) * 1000);
+                document.getElementById('speedo').innerText = val;
+                if(navigator.vibrate) navigator.vibrate(30);
+                if(val >= 1000) document.getElementById('gas-msg').innerText = "LIMITSİZ GÜZELLİK! ⚠️";
+            }, 40);
+        });
+        pedal.addEventListener('touchend', () => {
+            clearInterval(gasInt);
+            if(navigator.vibrate) navigator.vibrate(0);
+        });
+
+        // 4. ÇARK & ÖDÜL AÇIKLAMALARI
+        let rot = 0;
+        const prizes = [
+            { n: "Masaj", d: "Yorgunluğunu alacak 30 dakikalık huzur seansı." },
+            { n: "Evet Günü", d: "Bugün her isteğine 'evet' diyorum güzelliğim." },
+            { n: "Öpücük", d: "Seni dünyanın en mutlu kızı yapacak bir buse." },
+            { n: "Yıldızlı Gece", d: "Seninle baş başa, romantik bir gece yürüyüşü." },
+            { n: "Sürpriz", d: "Sana özel, henüz bilmediğin bir hediye!" },
+            { n: "Şanslı Gün", d: "Bugün tüm şansın yanında, ne istersen o." }
+        ];
+
+        function spin() {
+            let extra = Math.floor(Math.random() * 360);
+            rot += 2000 + extra;
+            document.getElementById('wheel').style.transform = `rotate(${rot}deg)`;
+            
+            setTimeout(() => {
+                let actualRot = rot % 360;
+                let index = Math.floor(((360 - actualRot) % 360) / 60);
+                let p = prizes[index];
+                document.getElementById('prize-name').innerText = p.n;
+                document.getElementById('prize-desc').innerText = p.d;
+                confetti();
+            }, 4000);
+        }
+
+        // 5. BAHÇE
+        const waterBtn = document.getElementById('water-btn');
+        let growth = 0, waterInt;
+        waterBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            document.getElementById('can').style.opacity = '1';
+            waterInt = setInterval(() => {
+                growth += 2; if(growth > 60) growth = 60;
+                document.querySelectorAll('.lale').forEach(l => l.style.fontSize = growth + 'px');
+                if(growth >= 60) document.getElementById('garden-msg').innerText = "ÇİÇEKLERİM SENİN İÇİN AÇTI! ❤️";
+            }, 80);
+        });
+        waterBtn.addEventListener('touchend', () => {
+            clearInterval(waterInt);
+            document.getElementById('can').style.opacity = '0';
+        });
+
+        // 6. LABİRENT
+        const player = document.getElementById('player');
+        const maze = document.getElementById('maze-box');
+        maze.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = maze.getBoundingClientRect();
+            let x = touch.clientX - rect.left - 11;
+            let y = touch.clientY - rect.top - 11;
+            
+            // Basit Sınır Kontrolü
+            if(x < 0) x = 0; if(x > rect.width - 22) x = rect.width - 22;
+            if(y < 0) y = 0; if(y > rect.height - 22) y = rect.height - 22;
+
+            player.style.left = x + 'px';
+            player.style.top = y + 'px';
+
+            if(y < 20) {
+                document.getElementById('maze-msg').innerText = "YOLCULUK TAMAMLANDI! ❤️";
+                document.getElementById('test-section').classList.remove('hidden');
+            }
+        });
+
+        // 7. TEST
+        let qIdx = 0;
+        const qs = ["Seni kim dünyalar kadar seviyor?", "En güzel manzara nedir?", "Huzur nerededir?", "Seni kim asla bırakmayacak?"];
+        function nextQ(ans) {
+            qIdx++;
+            if(qIdx < qs.length) {
+                document.getElementById('q-text').innerText = qs[qIdx];
+                document.getElementById('test-msg').innerText = "Harika cevap!";
+            } else {
+                document.getElementById('test-content').innerHTML = "<h2>TEST BİTTİ: BİZİ KİMSE AYIRAMAZ! ❤️</h2>";
+            }
+        }
+    </script>
+</body>
+</html>
